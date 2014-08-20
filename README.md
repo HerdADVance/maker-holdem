@@ -22,6 +22,6 @@
 	<li>Account for sidepots when shorter stacks are all-in</li>
 	<li>Emit to particular sockets, allowing cards and action buttons to only be seen by appropriate player</li>
 	<li>Allow users to enter their own names on signup</li>
-	<li>Allow more than one game to be played simultaneously<li>
-	<li>Allow options for other games such as No-Limit Hold'em, Omaha, Stud, etc...
+	<li>Allow more than one game to be played simultaneously</li>
+	<li>Allow options for other games such as No-Limit Hold'em, Omaha, Stud, etc...</li>
 </ul>
