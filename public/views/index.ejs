@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Texas Hold'em</title>
+	<link rel="icon" href="/holdem.ico">
+
+	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.17.2/build/cssreset/cssreset-min.css">
+	<link rel="stylesheet" href="/assets/css/poker.css">
+
+	<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+	<script>
+
+		function showNames(players, allplayers){
+            for(var i=0; i<allplayers.length; i++){
+            	if(allplayers[i].ingame == true){
+            		$('#player' + allplayers[i].id + ' .name').show();
+			        $('#player' + allplayers[i].id + ' .name').html(allplayers[i].name);
+			    }
+		    }
+		}
+		function showCards(players, allplayers){
+            for(var i=0; i<allplayers.length; i++){
+            	if(allplayers[i].inhand == true){
+            		$('#player' + allplayers[i].id + ' .cards div').css("visibility", "visible");
+			        $('#player' + allplayers[i].id + ' .card1').css('background-image', 'url(assets/images/' + allplayers[i].card1.image + '.png)');
+			        $('#player' + allplayers[i].id + ' .card2').css('background-image', 'url(assets/images/' + allplayers[i].card2.image + '.png)');
+			    }
+		    }
+		}
+		function showChips(players, allplayers){
+            for(var i=0; i<allplayers.length; i++){
+            	if(allplayers[i].ingame == true){
+                    $('#player' + allplayers[i].id + ' .chips').show();
+			        $('#player' + allplayers[i].id + ' .chips').html(allplayers[i].chips);
+			    }
+		    }
+		}
+		function showButton(players, allplayers){
+			$('.button').css('background-image', 'none');
+            for(var i=0; i<players.length; i++){
+            	if(players[i].button == true){
+			    	$('#player' + players[i].id + ' .button').css('background-image', 'url(assets/images/button.png)');
+				}
+		    }
+		}
+		function showChipsOut(players, allplayers, pot){
+			$('#pot span').html(pot);
+			$('.chipsout').hide();
+            for(var i=0; i<allplayers.length; i++){
+            	if(allplayers[i].chipsout > 0){
+	            	$('#player' + allplayers[i].id + ' .chipsout').show();
+				    $('#player' + allplayers[i].id + ' .chipsout').html(allplayers[i].chipsout);
+				}
+		    }
+		}
+		function scoop(players){
+  			$('#player' + players[0].id + ' .chips').html(players[0].chips);
+			$('.chipsout').hide();
+			$('#pot span').html(0);
+		}
+		function tieScoop(players){
+			for (i=0; i<players.length; i++){
+				$('#player' + players[i].id + ' .chips').html(players[i].chips);
+			}
+			$('.chipsout').hide();
+			$('#pot span').html(0);
+		}
+		function showCheck(){
+            $('#call').hide();
+            $('#check').show();
+		}
+		function showCall(){
+            $('#check').hide();
+            $('#call').show();
+		}
+		function showBet(){
+            $('#raise').hide();
+            $('#bet').show();
+            showCheck();
+		}
+		function showRaise(){
+            $('#raise').show();
+            $('#bet').hide();
+            showCall();
+		}
+		function hideRaise(){
+			$('#raise').hide();
+		}
+		function showBoard(board){
+			for(var i=0; i<board.length; i++){
+            	$('#board' + (i+1)).css('background-image', 'url(assets/images/' + board[i].image + '.png)');
+        	}
+		}
+		function hideBoard(){
+			$('#board div').css('background-image', 'none');
+		}
+
+		var socket = io();
+		socket.on('init', function(players, allplayers, pot, board) {
+			showNames(players, allplayers);
+			showChips(players, allplayers);
+			showCards(players, allplayers);
+			showButton(players, allplayers);
+			showChipsOut(players, allplayers, pot);
+			showCall();
+			showRaise();
+			if (board.length > 0) showBoard(board);
+			else hideBoard();
+		});
+
+		socket.on('addChips', function(players, allplayers, pot, cb, bb, raisecount, action, round) {
+			showChips(players, allplayers);
+			showChipsOut(players, allplayers, pot);
+			if (players[1].bigblind == true && cb==bb && round == 'p') showCheck();
+			if (action == 'raise' || action == 'bet') showRaise();
+			if (raisecount == 3) hideRaise();	
+		});
+
+		socket.on('fold', function(players, cb, bb) {
+		    $('#player' + players[0].id + ' .cards div').css('visibility', 'hidden');
+		    if (players[1].bigblind == true && cb==bb) showCheck();
+		});
+
+		socket.on('scoop', function(players, pot) {
+			alert(players[0].name + " won the pot of " + pot + " chips!")
+		    scoop(players);
+		});
+
+		socket.on('tiescoop', function(players, pot) {
+			var str = "Split pot between "
+			for (i=0; i<players.length; i++){
+				str += players[i].name + " ";
+			}
+			alert(str);
+		    tieScoop(players);
+		});
+
+		socket.on('flop', function(board, players, allplayers, pot) {
+		    showBoard(board);
+		    showChipsOut(players, allplayers, pot);
+		    showBet();
+		});
+
+	</script>
+
+	<script>
+	(function(){if(!/*@cc_on!@*/0)return;var e = "abbr,article,aside,audio,bb,canvas,datagrid,datalist,details,dialog,eventsource,figure,footer,header,hgroup,mark,menu,meter,nav,output,progress,section,time,video".split(','),i=e.length;while(i--){document.createElement(e[i])}})()
+	</script>
+
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js?v=1.0"></script>
+</head>
+
+<body>
+<div id="table">
+
+	<div id="board">
+		<div id="board1"></div>
+		<div id="board2"></div>
+		<div id="board3"></div>
+		<div id="board4"></div>
+		<div id="board5"></div>
+	</div>
+
+	<div id="action">
+		<button id="fold">Fold</button>
+		<button id="call">Call</button>
+		<button id="check">Check</button>
+		<button id="raise">Raise</button>
+		<button id="bet">Bet</button>
+	</div>
+
+	<p id="pot">
+		Total Pot: <span></span>
+	</p>
+
+	<div class="player" id="player1">
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="cards">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>	
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player2">
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="cards">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player3">
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="cards cards-left">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player4">
+		<div class="cards">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player5">
+		<div class="cards">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player6">
+		<div class="cards">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player7">
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="cards cards-right">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+	<div class="player" id="player8">
+		<div class="display">
+			<p class="name"></p>
+			<p class="chips"></p>
+		</div>
+		<div class="cards">
+			<div class="card1"></div>
+			<div class="card2"></div>
+		</div>
+		<div class="button"></div>
+		<div class="chipsout"></div>
+	</div>
+
+</div>
+
+
+<script>
+	$('#fold').on('click', fold);
+	$('#call').on('click', call);
+	$('#check').on('click', check);
+	$('#bet').on('click', bet);
+	$('#raise').on('click', raise);
+	
+	function fold() {
+		socket.emit('fold');
+	}
+
+	function call() {
+		socket.emit('call');
+	}
+	function raise() {
+		socket.emit('raise');
+	}
+	function bet() {
+		socket.emit('bet');
+	}
+	function init(){
+		socket.emit('init');
+	}
+	function check(){
+		socket.emit('check');
+	}
+	function flop(){
+		socket.emit('flop');
+	}
+
+	init();
+	
+</script>
+
+<script>
+
+
+
+</script>
+
+</body>
+</html>
+
+
